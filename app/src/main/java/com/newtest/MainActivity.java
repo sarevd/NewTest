@@ -1,8 +1,8 @@
 package com.newtest;
 
+import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -23,15 +23,26 @@ import com.squareup.picasso.Picasso;
 public class MainActivity extends AppCompatActivity {
 
     PeakSdkUiHelper uiHelper = new PeakSdkUiHelper(MainActivity.this);
+//TODO ids for flurry
+//    private static final String PEAK_APP_ID = "343b9d1657f5f935";
+//    private static final String PEAK_INTERSTITIAL_ZONE_ID = "112145";
+//    private static final String PEAK_VIDEO_ZONE_ID = "112268";
+//    private static final String PEAK_REWARDED_ZONE_ID = "112391";
+//    private static final String PEAK_BANNER_ZONE_ID = "59665";
+//    private static final String NATIVE_AD_ID = "59678";
 
-    private static final String PEAK_APP_ID = "5b1656281bbad6b8";
-    private static final String PEAK_INTERSTITIAL_ZONE_ID = "27022";
-    private static final String PEAK_BANNER_ZONE_ID = "";
-    private static final String NATIVE_AD_ID = "";
+//// FIXME: ids for leadbolt
+    private static final String PEAK_APP_ID = "6b3258be2b328de3";
+    private static final String PEAK_INTERSTITIAL_ZONE_ID = "123765";
+    private static final String PEAK_VIDEO_ZONE_ID = "";
+    private static final String PEAK_REWARDED_ZONE_ID = "";
+    private static final String PEAK_BANNER_ZONE_ID = "123792";
+    private static final String NATIVE_AD_ID = "123805";
     private String TAG = "peakkk";
 
     private boolean interstitialShown = false;
     private boolean bannerShown = false;
+    private boolean initialization = false;
 
     private ImageView mainImageView;
     private ImageView logoImageView;
@@ -42,42 +53,190 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private final Handler uiThreadHandler = new Handler();
     PeakNativeAd nativeAd;
+    Button staticB,videoB,rewardedB;
 
-    PeakAsyncAdRequest asyncAdRequest;
+    PeakAsyncAdRequest.PeakAsyncAdRequestListener asyncAdRequestListener = new PeakAsyncAdRequest.PeakAsyncAdRequestListener() {
+        @Override
+        public void onAdReady(String adZoneId) {
+            //Show the ad with adZoneId
+            //Request stops itself when the ad is ready.
+            if (PeakSdk.checkAdAvailable(adZoneId)) {
+                interstitialShown = true;
+                PeakSdk.showInterstitial(adZoneId);
+            }
+        }
+    };
+    PeakAsyncAdRequest.PeakAsyncAdRequestListener asyncAdRequestListener1 = new PeakAsyncAdRequest.PeakAsyncAdRequestListener() {
+        @Override
+        public void onAdReady(String adZoneId) {
+            //Show the ad with adZoneId
+            //Request stops itself when the ad is ready.
+            if (PeakSdk.checkAdAvailable(adZoneId)) {
+                interstitialShown = true;
+                PeakSdk.showInterstitial(adZoneId);
+            }
+        }
+    };
+    PeakAsyncAdRequest.PeakAsyncAdRequestListener asyncAdRequestListener2 = new PeakAsyncAdRequest.PeakAsyncAdRequestListener() {
+        @Override
+        public void onAdReady(String adZoneId) {
+            //Show the ad with adZoneId
+            //Request stops itself when the ad is ready.
+            if (PeakSdk.checkAdAvailable(adZoneId)) {
+                interstitialShown = true;
+                PeakSdk.showInterstitial(adZoneId);
+            }
+        }
+    };
+    PeakAsyncAdRequest.PeakAsyncAdRequestListener asyncAdRequestListener3 = new PeakAsyncAdRequest.PeakAsyncAdRequestListener() {
+        @Override
+        public void onAdReady(String adZoneId) {
+            //Show the ad with adZoneId
+            //Request stops itself when the ad is ready.
+            if (PeakSdk.checkAdAvailable(adZoneId)) {
+                interstitialShown = true;
+                View banner = PeakSdk.showBanner(adZoneId);
+                if (banner != null) {
+                    showBanner(banner);
+                }
+            }
+        }
+    };
+    PeakAsyncAdRequest.PeakAsyncAdRequestListener asyncAdRequestListener4 = new PeakAsyncAdRequest.PeakAsyncAdRequestListener() {
+        @Override
+        public void onAdReady(String adZoneId) {
+            //Show the ad with adZoneId
+            //Request stops itself when the ad is ready.
+            if (PeakSdk.checkAdAvailable(adZoneId)) {
+                interstitialShown = true;
+                showNativeAd();
+            }
+        }
+    };
 
-    private final PeakSdkListener peakSdkListener = new PeakSdkLogListener(TAG);
+    PeakAsyncAdRequest asyncAdRequest, asyncAdRequest1, asyncAdRequest2, asyncAdRequest3, asyncAdRequest4;
+    //PeakSdkListener peakSdkListener = new PeakSdkLogListener(TAG);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        PeakSdk.initialize(PEAK_APP_ID, uiHelper, peakSdkListener);
-
-        if(PeakSdk.checkAdAvailable(PEAK_BANNER_ZONE_ID)) {
-            View banner = PeakSdk.showBanner(PEAK_BANNER_ZONE_ID);
-            if (banner != null) {
-                showBanner(banner);
-            }
-        }
-
-        PeakAsyncAdRequest.PeakAsyncAdRequestListener asyncAdRequestListener = new PeakAsyncAdRequest.PeakAsyncAdRequestListener() {
+        findViews();
+        PeakSdkListener peakSdkListener = new PeakSdkListener() {
             @Override
-            public void onAdReady(String adZoneId) {
-                //Show the ad with adZoneId
-                //Request stops itself when the ad is ready.
-                if (PeakSdk.checkAdAvailable(adZoneId)) {
-                    interstitialShown = true;
-                    PeakSdk.showInterstitial(adZoneId);
+            public void onInitializationSuccess() {
+                Log.d(TAG, "onInitializationSuccess: ");
+                asyncAdRequest = PeakSdk.createAdRequest(PEAK_INTERSTITIAL_ZONE_ID);
+                asyncAdRequest1 = PeakSdk.createAdRequest(PEAK_VIDEO_ZONE_ID);
+                asyncAdRequest2 = PeakSdk.createAdRequest(PEAK_REWARDED_ZONE_ID);
+                asyncAdRequest3 = PeakSdk.createAdRequest(PEAK_BANNER_ZONE_ID);
+                //asyncAdRequest3.start(asyncAdRequestListener3);
+                if (asyncAdRequest3 != null) {
+                    asyncAdRequest3.start(asyncAdRequestListener3);
+                }
+                asyncAdRequest4 = PeakSdk.createAdRequest(NATIVE_AD_ID);
+                //asyncAdRequest4.start(asyncAdRequestListener4);
+                if (asyncAdRequest4 != null) {
+                    asyncAdRequest4.start(asyncAdRequestListener4);
                 }
             }
-        };
-        asyncAdRequest = PeakSdk.createAdRequest(PEAK_INTERSTITIAL_ZONE_ID);
 
-        if (asyncAdRequest != null) {
-            asyncAdRequest.start(asyncAdRequestListener);
-        }
+            @Override
+            public void onInitializationFailed(PeakSdkException e) {
+                Log.d(TAG, "onInitializationFailed: ");
+            }
+
+            @Override
+            public void onBannerShowSuccess(String s) {
+                Log.d(TAG, "onBannerShowSuccess: ");
+            }
+
+            @Override
+            public void onBannerShowFailed(String s, PeakSdkException e) {
+                Log.d(TAG, "onBannerShowFailed: ");
+            }
+
+            @Override
+            public void onInterstitialShowSuccess(String s) {
+                Log.d(TAG, "onInterstitialShowSuccess: ");
+            }
+
+            @Override
+            public void onInterstitialShowFailed(String s, PeakSdkException e) {
+                Log.d(TAG, "onInterstitialShowFailed: ");
+                if (PeakSdk.checkAdAvailable(PEAK_INTERSTITIAL_ZONE_ID)) {
+                    //  PeakSdk.showInterstitial(PEAK_INTERSTITIAL_ZONE_ID);
+                }
+            }
+
+            @Override
+            public void onInterstitialClosed(String s) {
+                Log.d(TAG, "onInterstitialClosed: ");
+                if (PeakSdk.checkAdAvailable(PEAK_INTERSTITIAL_ZONE_ID)) {
+                    //  PeakSdk.showInterstitial(PEAK_INTERSTITIAL_ZONE_ID);
+                }
+            }
+
+            @Override
+            public void onCompletedRewardExperience(String s) {
+                Log.d(TAG, "onCompletedRewardExperience: ");
+                if (PeakSdk.checkAdAvailable(PEAK_INTERSTITIAL_ZONE_ID)) {
+                    //  PeakSdk.showInterstitial(PEAK_INTERSTITIAL_ZONE_ID);
+                }
+            }
+
+            @Override
+            public void onNativeAdShowSuccess(String s) {
+                Log.d(TAG, "onNativeAdShowSuccess: ");
+            }
+
+            @Override
+            public void onNativeAdShowFailed(String s, PeakSdkException e) {
+                Log.d(TAG, "onNativeAdShowFailed: ");
+            }
+        };
+        PeakSdk.initialize(PEAK_APP_ID, uiHelper, peakSdkListener);
+
+        staticB = (Button) findViewById(R.id.button);
+        videoB = (Button) findViewById(R.id.button2);
+        rewardedB = (Button) findViewById(R.id.button3);
+
+        staticB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+            //    asyncAdRequest = PeakSdk.createAdRequest(PEAK_INTERSTITIAL_ZONE_ID);
+                //asyncAdRequest.start(asyncAdRequestListener);
+                if (asyncAdRequest != null) {
+                    asyncAdRequest.start(asyncAdRequestListener);
+                }
+            }
+        });
+
+        videoB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+            //    asyncAdRequest1 = PeakSdk.createAdRequest(PEAK_VIDEO_ZONE_ID);
+//                asyncAdRequest1.start(asyncAdRequestListener1);
+                if (asyncAdRequest1 != null) {
+                    asyncAdRequest1.start(asyncAdRequestListener1);
+                }
+            }
+        });
+
+        rewardedB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+               // asyncAdRequest2 = PeakSdk.createAdRequest(PEAK_REWARDED_ZONE_ID);
+//                asyncAdRequest2.start(asyncAdRequestListener2);
+                if (asyncAdRequest2 != null) {
+                    asyncAdRequest2.start(asyncAdRequestListener2);
+                }
+            }
+        });
+
+
     }
+
 
     @SuppressWarnings("ConstantConditions")
     private void showBanner(View banner) {
@@ -87,8 +246,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        uiHelper.pause();
         asyncAdRequest.cancel();
+        asyncAdRequest1.cancel();
+        asyncAdRequest2.cancel();
+        asyncAdRequest3.cancel();
+        asyncAdRequest4.cancel();
+        uiHelper.pause();
         super.onPause();
     }
 
@@ -114,14 +277,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showNativeAd() {
-        if (PeakSdk.checkAdAvailable(NATIVE_AD_ID)) {
+
             nativeAd = PeakSdk.showNativeAd(NATIVE_AD_ID);
             if (nativeAd != null) {
-                progressBar.setVisibility(View.GONE);
+               // progressBar.setVisibility(View.GONE);
                 PeakSdk.trackNativeAdShown(NATIVE_AD_ID);
                 bindNativeAdToViews(nativeAd);
             }
-        }
+
     }
 
     private void bindNativeAdToViews(PeakNativeAd nativeAd) {
